@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import Embedding, GlobalAveragePooling1D, Dense, BatchNormalization, Dropout, LSTM, Bidirectional,Conv1D
 from tensorflow.keras.optimizers import Adam
 import numpy as np
@@ -611,8 +612,41 @@ model = Sequential([
 ])
 optimizer = Adam(learning_rate=0.004)
 model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-model.fit(padded, np.array(labels), epochs=100)
+#model.fit(padded, np.array(labels), epochs=100)
 
+
+# 🧠 Define accuracy goal and early stopping
+target_accuracy = 0.997 
+max_rounds = 10  # max retraining attempts
+
+early_stopping = EarlyStopping(
+    monitor='accuracy',
+    patience=10,
+    restore_best_weights=True,
+    min_delta=0.001
+)
+
+# 🔁 Loop training until target accuracy reached
+for i in range(max_rounds):
+    print(f"\n🔁 Training round {i+1}/{max_rounds}")
+
+    history = model.fit(
+        padded,
+        np.array(labels),
+        epochs=100,
+        validation_split=0.2,
+        callbacks=[early_stopping],
+        verbose=1
+    )
+
+    acc = history.history['accuracy'][-1]
+    print(f"✅ Accuracy after round {i+1}: {acc:.4f}")
+
+    if acc >= target_accuracy:
+        print("🎯 Target accuracy reached. Finishing training.")
+        break
+    else:
+        print("⚠️ Not enough accuracy, retraining...\n")
 # Save tokenizer and model for use on device
 model.save("update_model.h5")
 import pickle
