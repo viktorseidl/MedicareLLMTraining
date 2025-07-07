@@ -430,6 +430,7 @@ sentences = [
   "Bitte dokumentiere den Toilettengang bei Herrn <Name>.",
   "Heute wurde Frau <Name> beim Toilettengang unterstützt.",
   "Herr <Name> benötigte heute Hilfe beim Toilettengang.",
+  "Unsere Pflegefachkraft hat die Medikamentenkontrolle bei <Name> durchgeführt.",
   "Die Bewohnerin hatte heute einen selbstständigen Toilettengang.",
   "Trage ein: Individueller Toilettengang für Frau <Name> um 15 Uhr.",
   "Der Toilettengang wurde heute erfolgreich durchgeführt.",
@@ -583,7 +584,7 @@ labels = [
     # Individueller Toillettengang
     36,36,36,36,36,36,36,36,36,36,  
     # Medikamentenkontrolle
-    37,37,37,37,37,37,37,37,37,37,37,37,37,  
+    37,37,37,37,37,37,37,37,37,37,37,37,37,37,  
     # Betreuung / Beobachtung
     38,38,38,38,38,38,38,38,38,38,  
     # Fixierung
@@ -602,13 +603,16 @@ sequences = tokenizer.texts_to_sequences(sentences)
 padded = pad_sequences(sequences, padding='post')
 
 model = Sequential([
-    Embedding(input_dim=len(tokenizer.word_index)+1, output_dim=200, input_length=padded.shape[1]),
+    Embedding(input_dim=len(tokenizer.word_index)+1, output_dim=100, input_length=padded.shape[1]),
     GlobalAveragePooling1D(),
+   Dense(256, activation='relu'),
    Dense(128, activation='relu'),
     BatchNormalization(),
-    Dropout(0.2),
-    Dense(64, activation='relu'),
-    Dense(48, activation='softmax')
+    Dropout(0.3),
+    Dense(80, activation='relu'),
+    BatchNormalization(),
+    Dropout(0.3),
+    Dense(45, activation='softmax')
 ])
 optimizer = Adam(learning_rate=0.004)
 model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])

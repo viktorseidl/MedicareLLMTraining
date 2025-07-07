@@ -95,12 +95,12 @@ if __name__ == "__main__":
   "Fixierung Bauchgurt im Rollstuhl wurde entfernt bei Frau Peters.",
   "Trage validierendes Gespräch mit Frau Nowak heute um 11:30 Uhr ein.",
   "Medikamente für Frau Jansen wurden heute gestellt – bitte eintragen.",
-  "KG extern bei Herrn Fischer heute erfolgt – dokumentieren.",
+  "Die KG wurde extern bei Herrn Fischer heute erledigt – dokumentieren.",
   "Aktualisiere Mobilitätsfaktor für Frau Klein auf 1,7.",
-  "Pflegefachkraft hat Medikamentenkonytrolle bei Herrn Walter gemacht – bitte erfassen.",
+  "Unsere Pflegefachkraft hat die Medikamentenkontrolle bei Herrn Walter durchgeführt.",
   "Füge eine neue Behandlungspflege bei Bewohnerin Schmidt hinzu.",
   "Beratendes Gespräch mit Angehörigen von Frau Brandt eintragen.",
-  "Lagerung bei Herrn Dietrich um 9 Uhr durchgeführt – bitte notieren.",
+  "Lagerung bei Herrn Dietrich wurde um 9 Uhr durchgeführt – bitte notieren.",
   "Eintrag: Nahrungsaufnahme bei Frau Lange normal.",
   "Einzelbetreuung bei Frau Keller von 13 bis 14 Uhr dokumentieren.",
   "Friseurtermin bei Herrn Ludwig heute abgeschlossen – bitte notieren.",
@@ -118,6 +118,6 @@ if __name__ == "__main__":
 
     for sentence in test_sentences:
         intent_idx, confidence = predict_intent(sentence)
-        if confidence < 0.9:
-            print(f"Input: '{sentence}'") 
-            print(f"Predicted intent: {intent_labels[intent_idx]} with confidence {confidence:.2f}\n")
+       # if confidence < 0.6:
+        print(f"Input: '{sentence}'") 
+        print(f"Predicted intent: {intent_labels[intent_idx]} with confidence {confidence:.2f}\n")
