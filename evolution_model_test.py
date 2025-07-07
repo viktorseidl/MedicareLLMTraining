@@ -1,21 +1,22 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import numpy as np
-import pickle  # to load tokenizer if saved with pickle
+import pickle
 from sklearn.metrics import classification_report, accuracy_score
-# Load your trained model
+
+# Load the trained model
 model = tf.keras.models.load_model('best_model.h5')
 
-# Load your tokenizer (adjust path and filename as needed)
+# Load the tokenizer
 with open('tokenizerevo.pickle', 'rb') as handle:
     tokenizer = pickle.load(handle)
 
-# Define max sequence length used during training
-MAX_SEQUENCE_LENGTH = 10  # Adjust to your trained model's input length
+# Define max sequence length
+MAX_SEQUENCE_LENGTH = 10
 
-# Your label dictionary (as provided)
+# Label dictionary
 labels = {
-    0: "update_blutzucker",
+     0: "update_blutzucker",
     1: "update_blutdruck",
     2: "update_temperatur",
     3: "update_gewicht",
@@ -60,43 +61,121 @@ labels = {
     42: "update_medikamente_verabreichen_pfk"
 }
 
-# Test sentences (example)
+# Inverse label map for lookup
+label_name_to_index = {v.strip(): k for k, v in labels.items()}  # strip accidental trailing spaces
+
+# Test input
 test_sentences = [
     "Bitte aktualisiere den Blutzuckerwert auf 125 mg/dl bei Frau Müller.",
-    "Trage die Temperatur von Herrn Schmidt mit 37,8 Grad ein.",
-    "Aktualisiere das Gewicht von Frau Lehmann auf 68 Kilogramm."
+  "Trage die Temperatur von Herrn Schmidt mit 37,8 Grad ein.",
+  "Aktualisiere das Gewicht von Frau Lehmann auf 68 Kilogramm.",
+  "Dokumentiere den Verbandswechsel bei Herrn Braun heute um 10 Uhr.",
+  "Notiere, dass Frau Schulz ihre Medikamente um 14 Uhr erhalten hat.",
+  "Pflegefachkraft hat die Medikamente bei Herrn Meier verabreicht – bitte eintragen.",
+  "Füge einen Termin zur Einzelbetreuung für Frau König um 15 Uhr hinzu.",
+  "Ergänze, dass die Gruppentherapie mit Bewohnern aus Wohnbereich 2 stattgefunden hat.",
+  "Fixierung im Rollstuhl bei Herrn Neumann wurde angelegt – bitte dokumentieren.",
+  "Bitte trage die Medikamentenvorbereitung für Diabetikerin Frau Schulze ein.",
+  "Ein- und Ausfuhr bei Herrn Weber: Einfuhr 1200 ml, Ausfuhr 1100 ml.",
+  "Eintrag: Fixierung am Therapietisch bei Frau Krüger durchgeführt.",
+  "Update: Bewohnerin Frau Wagner wurde heute geduscht.",
+  "Nagelpflege bei Herrn Schröder durchgeführt – bitte notieren.",
+  "Fußpflege bei Frau Hartmann abgeschlossen – trage es ein.",
+  "Temperatur bei Herrn Schwarz auf 38,2 aktualisieren.",
+  "Verabreichung von Insulin bei Frau Becker dokumentieren.",
+  "Fixierung mit Bauchgurt im Bett bei Herrn Kunze aktiv – bitte eintragen.",
+  "Fixierung Bauchgurt im Rollstuhl wurde entfernt bei Frau Peters.",
+  "Trage validierendes Gespräch mit Frau Nowak heute um 11:30 Uhr ein.",
+  "Medikamente für Frau Jansen wurden heute gestellt – bitte eintragen.",
+  "Die KG wurde extern bei Herrn Fischer heute erledigt – dokumentieren.",
+  "Aktualisiere Mobilitätsfaktor für Frau Klein auf 1,7.",
+  "Unsere Pflegefachkraft hat die Medikamentenkontrolle bei Herrn Walter durchgeführt.",
+  "Füge eine neue Behandlungspflege bei Bewohnerin Schmidt hinzu.",
+  "Beratendes Gespräch mit Angehörigen von Frau Brandt eintragen.",
+  "Lagerung bei Herrn Dietrich wurde um 9 Uhr durchgeführt – bitte notieren.",
+  "Eintrag: Nahrungsaufnahme bei Frau Lange normal.",
+  "Einzelbetreuung bei Frau Keller von 13 bis 14 Uhr dokumentieren.",
+  "Friseurtermin bei Herrn Ludwig heute abgeschlossen – bitte notieren.",
+  "Neue Fixierung am Therapietisch bei Frau Vogt aktiviert.",
+  "Bereite Medikamente für Herrn Scholz vor – eintragen.",
+  "Aktualisiere Eintrag: Medikamente verabreicht bei Frau Bergmann um 16 Uhr.",
+  "Einfuhr 1500 ml bei Herrn Otto – bitte dokumentieren.",
+  "Update: Bauchgurt im Bett bei Frau Seidel wurde entfernt.",
+  "Dokumentiere bitte, dass die Gruppenbetreuung heute stattgefunden hat.",
+  "Medikamente bei Frau Keller vorbereitet – bitte im System speichern.",
+  "Duschen bei Herrn Pfeiffer abgeschlossen – eintragen.",
+  "Fixierung an Bauchgurt im Rollstuhl bei Frau Frank erneut angelegt.",
+  "Trage ein: Medikamentengabe bei Herrn Paulsen durch PFK erfolgt."
+] 
+# True labels for above test samples
+true_labels = [
+     "update_blutdruck",
+  "update_temperatur",
+  "update_gewicht",
+  "update_verbandswechsel",
+  "update_medikamenten_stellung",
+  "update_medikamente_verabreichen_pfk",
+  "update_einzelbetreuung",
+  "update_gruppenbetreuung",
+  "update_fixierung_rollstuhl",
+  "update_medikamenten_vorbereitung_diabetiker",
+  "update_ein_ausfuhr",
+  "update_fixierung_therapietisch",
+  "update_duschen",
+  "update_nagelpflege",
+  "update_fusspflege",
+  "update_temperatur",
+  "update_medikamenten_vorbereitung_diabetiker",
+  "update_fixierung_bett",
+  "update_remove_fixierung_rollstuhl",
+  "update_validierende_gespraeche",
+  "update_medikamenten_stellung",
+  "update_kg_extern",
+  "update_mobilitaetsfaktor",
+  "update_medikamentenkontrolle",
+  "update_behandlungspflege",
+  "update_beratende_gespraeche",
+  "update_lagerungsprotokoll",
+  "update_nahrungsaufnahme",
+  "update_einzelbetreuung",
+  "update_frisoer",
+  "update_fixierung_therapietisch",
+  "update_medikamente_vorbereiten",
+  "update_medikamenten_stellung",
+  "update_ein_ausfuhr",
+  "update_remove_fixierung_bauchgurt",
+  "update_gruppenbetreuung",
+  "update_medikamente_vorbereiten",
+  "update_duschen",
+  "update_fixierung_rollstuhl",
+  "update_medikamente_verabreichen_pfk"
 ]
 
-# Preprocess input sentences
+# Encode input
 sequences = tokenizer.texts_to_sequences(test_sentences)
 padded_sequences = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH, padding='post')
-max_vocab_index = 169  # Adjust to your embedding input_dim - 1
-print("Max tokenizer index in input:", np.max(padded_sequences))
+
+# Optional check for vocab size
+max_vocab_index = 169
 if np.max(padded_sequences) > max_vocab_index:
     print("Warning: input token index exceeds embedding vocab size. Clipping indices.")
     padded_sequences = np.where(padded_sequences > max_vocab_index, 0, padded_sequences)
-# Predict with the model
+
+# Predict
 predictions = model.predict(padded_sequences)
-
-# Get predicted class indices
 predicted_indices = np.argmax(predictions, axis=1)
+predicted_labels = [labels[idx].strip() for idx in predicted_indices]
 
-# Map to label names
-predicted_labels = [labels[idx] for idx in predicted_indices]
-
-# Print results
-for sentence, label in zip(test_sentences, predicted_labels):
-    print(f"Sentence: {sentence}")
-    print(f"Predicted label: {label}")
-    print("---")
-true_labels = [
-    "update_blutzucker",
-    "update_temperatur",
-    "update_gewicht"
-]
+# Print predictions
 for sentence, pred_label in zip(test_sentences, predicted_labels):
     print(f"Sentence: {sentence}")
     print(f"Predicted label: {pred_label}")
-    print() 
-    print("Accuracy:", accuracy_score(true_labels, predicted_labels))
-    print(classification_report(true_labels, predicted_labels, target_names=list(true_labels.values())))
+    print("---")
+
+# Evaluate
+print("Accuracy:", accuracy_score(true_labels, predicted_labels))
+
+# Build label list for report
+unique_labels = sorted(list(set(true_labels + predicted_labels)))
+
+print(classification_report(true_labels, predicted_labels, labels=unique_labels, target_names=unique_labels))
