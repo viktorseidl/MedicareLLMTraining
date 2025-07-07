@@ -603,9 +603,9 @@ sequences = tokenizer.texts_to_sequences(sentences)
 padded = pad_sequences(sequences, padding='post')
 
 model = Sequential([
-    Embedding(input_dim=len(tokenizer.word_index)+1, output_dim=100, input_length=padded.shape[1]),
+    Embedding(input_dim=len(tokenizer.word_index)+1, output_dim=1000, input_length=padded.shape[1]),
     GlobalAveragePooling1D(),
-   Dense(256, activation='relu'),
+   Dense(200, activation='relu'),
    Dense(128, activation='relu'),
     BatchNormalization(),
     Dropout(0.3),
